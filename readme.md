@@ -1,6 +1,6 @@
 
 
-Deep Learning aided Smartphone Pedestrian Dead Reckoning
+Deep Learning aided Smartphone Pedestrian Dead Reckoning with Raw GPS Measurement
 ======================================================
 #### by Seo Yeon Stella Yang
 Mechanical & Aerospace Engineering dep. M.S. Student in Seoul National University.
