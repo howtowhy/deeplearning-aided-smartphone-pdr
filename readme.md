@@ -5,7 +5,7 @@ Deep Learning aided Smartphone Pedestrian Dead Reckoning
 
 - This project is deep learning Jeju camp sponsored by Google Tensorflow KR.
 
-- The mentor Eunsol Kim in Kakao Brain also give me a lot of advice for the research.
+- My mentor Eunsol Kim in Kakao Brain also give me a lot of advice for the research.
 
    Thanks to them.
 
