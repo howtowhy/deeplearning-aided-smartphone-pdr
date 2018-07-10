@@ -1,7 +1,17 @@
 
 
-Deep Learning aided Smartphone Pedestrian Dead Reckoning 
+Deep Learning aided Smartphone Pedestrian Dead Reckoning
 ======================================================
+#### by Seo Yeon Stella Yang
+Mechanical & Aerospace Engineering dep. M.S. Student in Seoul National University.
+
+
+
+
+
+
+<img width="1000" height="300" src = https://user-images.githubusercontent.com/10994112/42506381-b99237c8-847c-11e8-8ce0-07d87fbed14b.png></img>
+
 
 - This project is deep learning Jeju camp sponsored by Google Tensorflow KR.
 
