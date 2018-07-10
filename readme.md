@@ -76,12 +76,11 @@ If the model can classify the user pose mode and predict the INS error, the PDR 
 -	Change it as TFRecord form 
 -	Data loader will load the data and shape it as same time interval (or spectroscopy) * (find example code : transform)
 ###### Model : Need to be specify what model will I use… -> discuss with mentor
--	Input side : (Dimension is needed to determined)
+-	Input side : (Dimension is needed to be determined)
   1)	CNN
   2)	RNN
   3)	LSTM
  
- ** (Try first with open-sources and compare it’s accuracy and change the structure)
 ###### Output : User’s 6 pose modes (classification : softmax)
 
 #### 2) Plan 2 : Prediction of INS error 
