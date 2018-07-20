@@ -10,7 +10,7 @@ def parseBinary(filename):
         while True:
            ts_f = f.read(8)
            st_f = f.read(1)
-           x_f = f.read(4) 
+           x_f = f.read(4)
            y_f = f.read(4)
            z_f = f.read(4)
            if ts_f and st_f and x_f and y_f and z_f:
@@ -67,7 +67,7 @@ def parseTrace(filename):
 
     #all returned timestamps start from 0
     accTs = [x - accTs[0] for x in accTs]
-    gyroTs = [x - gyroTs[0] for x in gyroTs] 
+    gyroTs = [x - gyroTs[0] for x in gyroTs]
     magnTs = [x - magnTs[0] for x in magnTs]
 
     return (accTs, accData, gyroTs, gyroData, magnTs, magnData)

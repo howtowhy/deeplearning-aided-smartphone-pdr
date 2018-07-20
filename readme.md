@@ -26,7 +26,7 @@ If the model can classify the user pose mode and predict the INS error, the PDR 
 * input data : Smartphone INS(accel, gyro, mag) and GPS sequenctial data
 * considering training model : CNN, RNN, LSTM
 * output prediction : 
-1) Human walking context : in-pocket, texting, calling, In-hand
+1) Human walking context : 7 class
 2) Error estimation : In GPS outage situation, predicting the INS drifting error
 
 ## 2. Plan for Jeju Camp
@@ -68,7 +68,7 @@ If the model can classify the user pose mode and predict the INS error, the PDR 
 #### 1)	Plan 1 : Classify the User’s mode
 ###### Input : Cambridge smartphone dataset 
 -	27 distinct users.
--	6 pose modes
+-	7 pose modes
 -	Accelerometer, Gyro scope, Magnetometer 
 -	Label : Pose mode label (one-hot)
 ###### Preprocessing : 
@@ -81,13 +81,14 @@ If the model can classify the user pose mode and predict the INS error, the PDR 
   2)	RNN
   3)	LSTM
  
-###### Output : User’s 6 pose modes (classification : softmax)
+###### Output : User’s 7 pose modes (classification : softmax)
+Hand held / Hand held using / Trousers_front_pocket / Trousers_back_pocket / Backpack / Handbag / Shirt_pocket 
 
 #### 2) Plan 2 : Prediction of INS error 
 ###### Input : 
 - Smartphone INS sensor data : walking data in track 
 - gps data : Smartphone GPS sensor data : : walking data in track
-- gps true data : GPS instrument data : walking data in track
+- Label : GPS instrument data : walking data in track
 
 ** (need to make by my self -> small dataset -> cross validation)
 ###### Preprocessing : same with plan 1

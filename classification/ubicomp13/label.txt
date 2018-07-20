@@ -1,0 +1,8 @@
+1. Hand held : 27
+2. Hand held using : 27
+3. Trousers_front_pocket : 24
+4. Trousers_back_pocket : 25
+5. Backpack : 21
+---------------------
+6. Handbag : 6
+7. Shirt_pocket : 2
