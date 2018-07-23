@@ -35,10 +35,28 @@ from ubicomp13 import parseTraces
 import hyper_parameter
 
 
+def _int64_feature(value):
+    """Wrapper for inserting int64 features into Example proto."""
+    if not isinstance(value, list):
+        value = [value]
+    return tf.train.Feature(int64_list=tf.train.Int64List(value=value))
+
+
+def _float_feature(value):
+    """Wrapper for inserting float features into Example proto."""
+    if not isinstance(value, list):
+        value = [value]
+    return tf.train.Feature(float_list=tf.train.FloatList(value=value))
+
+
+def _bytes_feature(value):
+    """Wrapper for inserting bytes features into Example proto."""
+    if not isinstance(value, list):
+        value = [value]
+    return tf.train.Feature(bytes_list=tf.train.BytesList(value=value))
+
 
 class parse_cambridge :
-
-
     def __init__(self):
         self.path_list_ = []
         self.label_list_ = []
@@ -46,8 +64,7 @@ class parse_cambridge :
         self.channel_num = hyper_parameter.basic_parameters['channel']
         self.sample_num = hyper_parameter.basic_parameters['sample']
 
-
-    def get_name_from_path(self,l_n,path_list):
+    def get_name_from_path(self, l_n, path_list):
         item_num = len(path_list)
         name_l = []
         for j in range(0,item_num):
@@ -67,127 +84,145 @@ class parse_cambridge :
             self.name_list_.append(self.get_name_from_path(i,self.path_list_[i]))
         return self.name_list_, self.label_list_, self.path_list_
 
-    def onehot_encode_label(self,label):
+    def onehot_encode_label(self, label):
         onehot_label = []
-        iter = len(self.label_list_)
-        for i in range(iter):
-            if self.label_list_[i] == label:
-                onehot_label.append(1)
-            else:
-                onehot_label.append(0)
 
-        onehot_label = np.asarray(onehot_label)
-        onehot_label = onehot_label.astype(np.uint8)
-        return onehot_label
+        for iter_n in self.label_list_:
+            # Boolean도 true false를 int로 변환하면 1, 0으로 변합니다.
+            onehot_label.append(int(iter_n==label))
 
+        return np.array(onehot_label).astype(np.uint8)
 
-    def writing_data_to_tfrecord(self, name_list_, path_list_, label_list_, split): #파일 이름과 label list 를 받고, 상위 path 정보 받아서 path 생성
-        class_num = len(label_list_)
+    # 준호: 중요!!!!!! path_list는 from glob import glob 한 후에
+    # path_list = glob('ubicomp_13/train_data/*/*.out')
+    # 이런 식으로 만들어서 넣어주면 편합니다. glob가 이해가 안 되면 여쭤봐주세요!
+    def writing_data_to_tfrecord(self, path_list, num_channel=6, split='train'): #파일 이름과 label list 를 받고, 상위 path 정보 받아서 path 생성
+        '''
+        :param name_list_:
+        :param path_list_: 파일 경로 목록
+        :param label_list_: 파일 레이블 목록
+        :param split:
+        :return:
+        '''
         save_dir = "D:\\dev\\jejucamp-seoyeon\\classification\\ubicomp13_p"
         filename = os.path.join(save_dir, split + '.tfrecords')
         writer = tf.python_io.TFRecordWriter(filename)
-        for i in range(0, class_num): # 자세 class
-            item_num = len(name_list_[i])
-            for j in range(0,item_num):  # dataset 수 (안의 사람데이터)
-                # make one hot label
-                label_now = label_list_[i]
-                onehotlabel = self.onehot_encode_label(label_now)
 
-                # make data concatinate
-                inname = name_list_[i][j]  # 이거를 네임 대신 list 로 받아야된다.
-                inpath = path_list_[i][j]
-                path = inpath
-                (at,a,gt,g,mt,m) = parseTraces.parseTrace(path) # a1,
+        for path in path_list:
+            item = len(path)
+            for it in range(item):
+                label = os.path.dirname(path[it]).split('\\')[-1]
+
+                # 여기 부분은 이해가 안 되서 이 함수는 pass
+                (at, a, gt, g, mt, m) = parseTraces.parseTrace(path[it])
+
+                # 좀 더 간략하게 수정 드렸습니다.
+                onehotlabel = self.onehot_encode_label(label)
+
                 n1 = len(at)
-                # (accTs, accData, gyroTs, gyroData, magnTs, magnData)
-
                 l_at = len(at)
                 l_a = len(a)
                 l_g = len(g)
                 l_m = len(m)
-               # m_l = min([l_at,l_a,l_g,l_m])
+                # m_l = min([l_at,l_a,l_g,l_m])
                 m_l = 6000
-                #concatinate
+                # concatinate
+
                 nn = []
                 for k in range(m_l): # data 길이 k
                     nn.append([at[k], a[k][0], a[k][1], a[k][2], g[k][0], g[k][1], g[k][2], m[k][0], m[k][1], m[k][2]])
                 data = np.array(nn)
-                data = np.reshape(data,[1000,10,6]) #batch, width, height, channel
-                #print(data.shape)
-                image = data.tostring()
-                onehotlabel = np.array(onehotlabel)
-                byte_onehot_label = onehotlabel.tostring()
-                #inname = np.array(inname)
-                # byte_inname = inname.tostring()
-               # byte_inname = tf.compat.as_bytes(inname)
-                chann = self.channel_num;
-                sam = self.sample_num;
+
+                height = 1000
+                width = 10
+                data = np.reshape(data, [height, width, num_channel])
 
                 example = tf.train.Example(
                     features=tf.train.Features(
                         feature={
-                                    #'length': self._int64_feature(n1),
-                                    'label': tf.train.Feature(bytes_list=tf.train.BytesList(value=[byte_onehot_label])),
-                                    'channel': tf.train.Feature(int64_list=tf.train.Int64List(value=[chann])),
-                                    'sample': tf.train.Feature(int64_list=tf.train.Int64List(value=[sam])),
-                                   # 'name': tf.train.Feature(bytes_list=tf.train.BytesList(value=[byte_inname])),
-                                    'image_raw': tf.train.Feature(bytes_list=tf.train.BytesList(value=[image]))}))
+                            # 준호: 중요팁! parsing 할 때의 dtype을 알아야 하므로, 넣을 때 미리 정해주고 넣으면 편합니다.
+                            # tfrecords를 만들 때랑 parse 할 때 dtype이 꼭 맞아야함!!!!
+                            'image_raw': _bytes_feature(data.astype(np.float32).tostring()),
+                            # 여기 label은 데이터가 크지 않으므로 그냥 int로 바로 저장해도 좋습니다.
+                            'label': _bytes_feature(onehotlabel.astype(np.int64).tostring()), #_int64_feature(onehotlabel),
+                            'height': _int64_feature(height),
+                            'width': _int64_feature(width),
+                            'channel': _int64_feature(num_channel)
+                            #'length': self._int64_feature(n1),
+                            # 'name': _bytes_feature(byte_inname),
+                        }))
                 writer.write(example.SerializeToString())
 
         writer.close()
-
+        return
         #parsing 해서 어떤 형태로 저장해서 tf.record 로 바꿀 것인가
         #멘토님께서 concate 하여서 하는 방법 제시한 것으로 구성해서 numpy type 으로 저장한다.
+        # 준호: writer에는 return 안 해도 됩니다. 굳이 하려면 writer의 path를 return 해줘도 좋아요
 
-        return
 
-    def read_data_from_tfrecode(self,name_):
-        # READ
-        NUM_EPOCHS = 10  # 중복?
-
+    # 준호: param에 is_training이 있으면 shuffle 유무를 정해줄 수 있습니다.
+    def read_data_from_tfrecode(self, name_, batch_size, num_epochs=10, is_training=True):
         filename = os.path.join("D:\\dev\\jejucamp-seoyeon\\classification", name_+".tfrecords")
 
-        filename_queue = tf.train.string_input_producer(
-            [filename], num_epochs=NUM_EPOCHS)
+        dataset = tf.data.TFRecordDataset([filename])
 
-        reader = tf.TFRecordReader()
-        _, serialized_example = reader.read(filename_queue)
-        features = tf.parse_single_example(
-            serialized_example,
-            features={
-                'label': tf.FixedLenFeature([], tf.string),
-                'channel' : tf.FixedLenFeature([], tf.int64),
-                'sample': tf.FixedLenFeature([], tf.int64),
+
+        def parser(record):
+            keys_to_features = {
+                'image_raw': tf.FixedLenFeature([], tf.string, default_value=''),
+                'label': tf.FixedLenFeature([], tf.string, default_value=''),
+                'height': tf.FixedLenFeature([], tf.int64, default_value=0),
+                'width': tf.FixedLenFeature([], tf.int64, default_value=0),
+                'channel' : tf.FixedLenFeature([], tf.int64, default_value=6),
+                'sample': tf.FixedLenFeature([], tf.int64, default_value=0)
             #    'name': tf.FixedLenFeature([], tf.string),
-                'image_raw': tf.FixedLenFeature([], tf.string),
-            })
+            }
+
+            parsed = tf.parse_single_example(record, keys_to_features)
+
+            height = parsed['height']
+            width = parsed['width']
+            channel_ = parsed['channel']
+
+            image_ = tf.decode_raw(parsed['image_raw'], tf.float32) # 원래 타입 확인
+            image_ = tf.cast(image_, dtype=tf.float16)  # 준호: 학습시에는 float16 또는 float32로 변환하도록 합니다. // 왜요?
+            # 준호: 한번 parse 할 때 마다 하나의 데이터씩만 뽑아야 합니다.
+            image_ = tf.reshape(image_, [1000, 10, 6])
+
+            label_ = tf.decode_raw(parsed['label'], tf.int64)  # 원래 타입 확인
+            label_ = tf.cast(label_, dtype=tf.int64)  # 준호: 학습시에는 float16 또는 float32로 변환하도록 합니다.
+            label_ = tf.reshape(label_, [1, 6])
 
 
-        image_ = tf.decode_raw(features['image_raw'], tf.float32) # 원래 타입 확인
-        #image = tf.cast(image, tf.float32)
-        image_ = tf.reshape(image_,[-1, 1000, 10, 6]) # 이건뭔가
-        label_ = tf.decode_raw(features['label'], tf.uint8) # 타입확인
-        label_ = tf.reshape(label_,[-1, 1, 6])  # 이건뭔가
-        channel_ = tf.cast(features['channel'], dtype=tf.int32)
-        sample_ = tf.cast(features['sample'], dtype=tf.int32)
-        # name = tf.cast(features['name'], tf.string)
-       # name = features['name'].value[0].decode('utf-8')#.bytes_list.value[0].decode('utf-8')
-       # print(name)
- # def tfrecord_make(self):
+            sample_ = tf.cast(parsed['sample'], dtype=tf.int32)
 
-        return image_, label_, channel_, sample_
+            return image_, label_, channel_, sample_
+
+        dataset = dataset.map(parser)
+        dataset = dataset.repeat()
+        if is_training:
+            dataset = dataset.shuffle(buffer_size=(100))  # 준호: buffer size는 직접 정해주시는게 ㅎㅎ
+        dataset = dataset.batch(batch_size)
+
+        iterator = dataset.make_initializable_iterator()
+
+        # 준호: 후에 데이터를 만들어 줄 때 next_element = iterator.get_next()로 한번 만들어 주고
+        # iterator는 sess.run(iterator.initializer, feed_dict)로 한번 돌려주고
+        # 데이터를 하나씩 꺼내고 싶을 땐 image = sess.run(next_element) 으로 돌리면 됩니다.
+        return iterator
+
 
     def preprocessing(self, image_p, label_p, channel_p, sample_p):
 
+        '''  dataset = tf.data.TFRecordDataset(image_)
+          dataset = dataset.map(self._resize_function)
+          dataset = dataset.repeat()
+          dataset = dataset.shuffle(buffer_size=(int(len(image_) * 0.4) + 3 * 5))
+          dataset = dataset.batch(5) # 5 batch size
+
+          iterator = dataset.make_initializable_iterator()
+          image_stacked, label_stacked = iterator.get_next() '''
+
+        return image_p, label_p
 
 
-        return
-
-    '''  dataset = tf.data.TFRecordDataset(image_)
-      dataset = dataset.map(self._resize_function)
-      dataset = dataset.repeat()
-      dataset = dataset.shuffle(buffer_size=(int(len(image_) * 0.4) + 3 * 5))
-      dataset = dataset.batch(5) # 5 batch size
-
-      iterator = dataset.make_initializable_iterator()
-      image_stacked, label_stacked = iterator.get_next() '''

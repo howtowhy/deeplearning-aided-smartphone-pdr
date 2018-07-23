@@ -17,7 +17,7 @@ basic_parameters = {
 
 basic_parameters.update({
     # input parameter
- 'channel' : 10,
+ 'channel' : 6,
  'sample' : 1000
 
 })
