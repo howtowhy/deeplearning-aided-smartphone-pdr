@@ -19,6 +19,9 @@ def max_pool_2x2(x):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                           strides=[1, 2, 2, 1], padding='SAME')
 
+def max_pool_3x3(x):
+    return tf.nn.max_pool(x, ksize=[1, 3, 3, 1],
+                          strides=[1, 1, 1, 1], padding='SAME')
 
 def conv_layer(input, shape):
     W = weight_variable(shape)
